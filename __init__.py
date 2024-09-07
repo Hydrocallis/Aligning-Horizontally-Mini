@@ -1,10 +1,10 @@
 bl_info = {
     "name": "Aligning Horizontally Mini",
     "author": "KSYN",
-    "version": (1, 0),
+    "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Object",
-    "description": "選択したオブジェクトをグリッドに整列します",
+    "description": "Aligns selected objects in a grid",
     "warning": "",
     "wiki_url": "",
     "category": "Object",
@@ -16,84 +16,83 @@ from collections import defaultdict
 
 class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
     bl_idname = "object.arrange_objects_in_grid"
-    bl_label = "オブジェクトをグリッドに整列"
-    bl_description = "選択したオブジェクトを仮想的な立方体状に整列します"
+    bl_label = "Aligning Horizontally Mini"
+    bl_description = "Aligns selected objects in a virtual cubic grid"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # オペレータープロパティで分割基準文字列を指定（デフォルトはピリオド）
+    # Operator property to specify the split character (default is period)
     split_char: bpy.props.StringProperty(name="Split Character", default=".") # type: ignore
 
     x_count: bpy.props.IntProperty(
-        name="X軸の数",
-        description="X軸に配置するオブジェクトの数",
+        name="X-axis Count",
+        description="Number of objects to place on the X-axis",
         default=3,
         min=1
     ) # type: ignore
     
     y_count: bpy.props.IntProperty(
-        name="Y軸の数",
-        description="Y軸に配置するオブジェクトの数",
+        name="Y-axis Count",
+        description="Number of objects to place on the Y-axis",
         default=3,
         min=1
     ) # type: ignore
     
     spacing_x: bpy.props.FloatProperty(
-        name="X軸の間隔",
-        description="X軸のオブジェクト間のスペース",
+        name="X-axis Spacing",
+        description="Space between objects on the X-axis",
         default=2.0,
         min=0.1
     ) # type: ignore
     
     spacing_y: bpy.props.FloatProperty(
-        name="Y軸の間隔",
-        description="Y軸のオブジェクト間のスペース",
+        name="Y-axis Spacing",
+        description="Space between objects on the Y-axis",
         default=2.0,
         min=0.1
     ) # type: ignore
     
     spacing_z: bpy.props.FloatProperty(
-        name="Z軸の間隔",
-        description="Z軸のオブジェクト間のスペース",
+        name="Z-axis Spacing",
+        description="Space between objects on the Z-axis",
         default=2.0,
         min=0.1
     ) # type: ignore
 
     sort_active_first: bpy.props.BoolProperty(
-        name="アクティブを先頭に",
-        description="アクティブなオブジェクトを先頭にソートします",
+        name="Active Object First",
+        description="Sort the active object to the front",
         default=False
     ) # type: ignore
 
-    pass_active: bpy.props.BoolProperty( # type: ignore
+    pass_active: bpy.props.BoolProperty(
         name="Pass Active Objects",
         description="If True, active objects will be removed from groups",
         default=False
-    )
-
+    ) # type: ignore
 
     group_by_name: bpy.props.BoolProperty(
-        name="名前でグループ化",
-        description="オブジェクトの名前を基準にグループ化し、整列します",
+        name="Group by Name",
+        description="Group and align objects based on their names",
         default=False
     ) # type: ignore
 
     group_placement_direction: bpy.props.EnumProperty(
-        name="グループ配置方向",
-        description="各グループを配置する方向を指定します",
+        name="Group Placement Direction",
+        description="Specify the direction to place each group",
         items=[
-            ('X+', "X+", "X軸のプラス方向に配置"),
-            ('X-', "X-", "X軸のマイナス方向に配置"),
-            ('Y+', "Y+", "Y軸のプラス方向に配置"),
-            ('Y-', "Y-", "Y軸のマイナス方向に配置"),
-            ('Z+', "Z+", "Z軸のプラス方向に配置"),
-            ('Z-', "Z-", "Z軸のマイナス方向に配置"),
+            ('X+', "X+", "Place in positive X direction"),
+            ('X-', "X-", "Place in negative X direction"),
+            ('Y+', "Y+", "Place in positive Y direction"),
+            ('Y-', "Y-", "Place in negative Y direction"),
+            ('Z+', "Z+", "Place in positive Z direction"),
+            ('Z-', "Z-", "Place in negative Z direction"),
         ],
         default='X+'
     ) # type: ignore
     
     group_info: bpy.props.StringProperty(
-        name="グループ情報",
-        description="グループの順番とオブジェクト数",
+        name="Group Information",
+        description="Group order and object count",
         default=""
     ) # type: ignore
 
@@ -104,41 +103,41 @@ class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
         active_object = context.active_object
 
         if not selected_objects or not active_object:
-            self.report({'WARNING'}, "オブジェクトが選択されていないか、アクティブなオブジェクトがありません")
+            self.report({'WARNING'}, "No objects selected or no active object")
             return {'CANCELLED'}
 
         if self.sort_active_first:
-            # アクティブオブジェクトをリストの先頭に移動
+            # Move active object to the front of the list
             selected_objects.remove(active_object)
             selected_objects.insert(0, active_object)
 
-        # オブジェクトを名前でグループ化する場合
+        # Group objects by name if option is selected
         if self.group_by_name:
             grouped_objects = self.group_objects_by_name(selected_objects)
         else:
             grouped_objects = {'All Objects': selected_objects}
         
-        # グループ情報を初期化
+        # Initialize group information
         group_info_list = []
         
-        # 初期位置
+        # Initial position
         current_position = active_object.location.copy()
 
-        # アクティブなオブジェクトはリストから消す
+        # Remove active object from the list if pass_active is True
         if self.pass_active:
             if active_object:
                 for group_name, objects in grouped_objects.items():
                     if active_object in objects:
                         objects.remove(active_object)
         
-        # グループごとに整列を行う
+        # Align for each group
         for group_name, objects in grouped_objects.items():
-            # 現在のグループの位置に整列
+            # Align to the current group position
             positions = self.calculate_grid_positions(len(objects), current_position)
             for obj, pos in zip(objects, positions):
                 obj.location = pos
             
-            # 次のグループの初期位置を計算
+            # Calculate initial position for the next group
             max_x, max_y, max_z = self.calculate_max_dimensions(len(objects))
             group_info_list.append(f"Group: {group_name}, Objects: {len(objects)}, Z count: {max_z}")
             
@@ -155,18 +154,18 @@ class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
             elif self.group_placement_direction == 'Z-':
                 current_position.z -= max_z * self.spacing_z
 
-        # グループ情報をプロパティに格納
+        # Store group information in the property
         self.group_info = "\n".join(group_info_list)
 
-        self.report({'INFO'}, "オブジェクトをグリッドに整列しました")
+        self.report({'INFO'}, "Objects aligned in grid")
         return {'FINISHED'}
 
     def calculate_grid_positions(self, total_objects, origin):
-        """与えられたオブジェクト数に基づいて仮想的な立方体の点群を計算します"""
+        """Calculate virtual cubic point cloud based on the given number of objects"""
         x_count = self.x_count
         y_count = self.y_count
         
-        # Z軸の個数を計算
+        # Calculate Z-axis count
         z_count = math.ceil(total_objects / (x_count * y_count))
         
         positions = []
@@ -203,7 +202,7 @@ class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
         return positions
 
     def calculate_max_dimensions(self, total_objects):
-        """オブジェクト数から最大のX, Y, Zの値を計算"""
+        """Calculate maximum X, Y, Z values from the number of objects"""
         x_count = self.x_count
         y_count = self.y_count
         
@@ -216,12 +215,11 @@ class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
         return max_x, max_y, max_z
 
     def group_objects_by_name(self, objects):
-
-        """オブジェクトを名前でグループ化します"""
+        """Group objects by name"""
         groups = defaultdict(list)
         
         for obj in objects:
-            # 名前の最初の部分（数字や特定の文字列まで）をグループキーとして使用
+            # Use the first part of the name (up to numbers or specific string) as the group key
             group_key = obj.name.split(self.split_char)[0]
             groups[group_key].append(obj)
         
@@ -231,8 +229,7 @@ class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
         layout = self.layout
         col = layout.column()
         
-        # オペレーターのプロパティを描画
-
+        # Draw operator properties
         col.prop(self, "x_count")
         col.prop(self, "y_count")
         col.prop(self, "spacing_x")
@@ -244,28 +241,29 @@ class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
         col.prop(self, "group_placement_direction")
         col.prop(self, "split_char")
         
-        # グループ情報を描画
+        # Draw group information
         if self.group_info:
-            col.label(text="グループ情報:")
+            col.label(text="Group Information:")
             lines = self.group_info.splitlines()
 
-            # 最初の10行だけ表示する
+            # Display only the first 10 lines
             for i, line in enumerate(lines):
                 if i < 10:
                     col.label(text=line)
                 else:
-                    col.label(text="...省略しました")  # 10行以上の場合は説明文を表示
+                    col.label(text="...omitted")  # Display explanation text if more than 10 lines
                     break
 
 
-# クラスの登録
+# Class registration
 classes = [
     OBJECT_OT_ArrangeObjectsInGrid,
 ]
 
 
-# オペレーターをBlenderに登録
+# Register operator in Blender
 def menu_func(self, context):
+    self.layout.separator()
     self.layout.operator(OBJECT_OT_ArrangeObjectsInGrid.bl_idname)
 
 def register():
