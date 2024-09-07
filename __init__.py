@@ -15,7 +15,7 @@ import math
 from collections import defaultdict
 
 class OBJECT_OT_ArrangeObjectsInGrid(bpy.types.Operator):
-    bl_idname = "object.arrange_objects_in_grid"
+    bl_idname = "object.aligning_horizontally_mini"
     bl_label = "Aligning Horizontally Mini"
     bl_description = "Aligns selected objects in a virtual cubic grid"
     bl_options = {'REGISTER', 'UNDO'}
@@ -269,12 +269,12 @@ def menu_func(self, context):
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.VIEW3D_MT_object.append(menu_func)
+    bpy.types.VIEW3D_MT_transform_object.append(menu_func)
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-    bpy.types.VIEW3D_MT_object.remove(menu_func)
+    bpy.types.VIEW3D_MT_transform_object.remove(menu_func)
 
 if __name__ == "__main__":
     register()
