@@ -22,7 +22,7 @@ license = [
 
 # Optional: add-ons can list which resources they will require:
 [permissions]
-scene = "Modify object locations in the scene"
+files = "Modify object locations in the scene"
 
 # Optional: build settings.
 [build]
