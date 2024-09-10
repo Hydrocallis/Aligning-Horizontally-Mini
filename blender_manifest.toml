@@ -8,7 +8,7 @@ maintainer = "KSYN <hydrocallis@gmail.com>"
 type = "add-on"
 
 # Optional link to documentation, support, source files, etc
-# website = "https://your-website.com/aligning-horizontally-mini/"
+website = "https://github.com/Hydrocallis/Aligning-Horizontally-Mini"
 
 # Tags from the official Blender list
 tags = ["3D View", "Object"]
