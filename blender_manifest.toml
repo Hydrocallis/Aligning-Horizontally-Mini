@@ -1,7 +1,7 @@
 # Aligning Horizontally Mini extension manifest file
 schema_version = "1.0.0"
 id = "aligning_horizontally_mini"
-version = "1.0.0"
+version = "1.0.1"
 name = "Aligning Horizontally Mini"
 tagline = "Align selected objects in a customizable grid in the 3D viewport"
 maintainer = "KSYN <hydrocallis@gmail.com>"
@@ -21,8 +21,8 @@ license = [
 ]
 
 # Optional: add-ons can list which resources they will require:
-[permissions]
-files = "Modify object locations in the scene"
+# [permissions]
+# files = "Modify object locations in the scene"
 
 # Optional: build settings.
 [build]

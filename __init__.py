@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Aligning Horizontally Mini",
     "author": "KSYN",
-    "version": (1, 0, 0),
+    "version": (1, 0, 1),
     "blender": (4, 2, 0),
     "location": "View3D > Object",
     "description": "Aligns selected objects in a grid",
